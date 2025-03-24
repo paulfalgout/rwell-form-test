@@ -1,0 +1,24 @@
+{
+  "name": "xstate-vue-formkit-demo",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs --fix --ignore-path .gitignore"
+  },
+  "dependencies": {
+    "@formkit/vue": "^1.6.8",
+    "@xstate/vue": "^4.0.2",
+    "vue": "^3.5.13",
+    "xstate": "^5.0.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.2.3",
+    "eslint": "^9.23.0",
+    "eslint-plugin-vue": "^10.0.0",
+    "vite": "^6.2.2"
+  }
+}
