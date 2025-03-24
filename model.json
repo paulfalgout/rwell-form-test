@@ -1,0 +1,31 @@
+{
+  "id": "be2a91d9-2632-49cb-9093-3f580ef93c0d",
+  "type": "forms",
+  "attributes": {
+    "name": "Test GAD7",
+    "details": "",
+    "fields": [
+      "fields.behavioral_health_gad",
+      "action.id",
+      "clinician.id",
+      "clinician.name",
+      "pateint.sex"
+    ],
+    "filtered": [
+      {
+        "field": "field_history.behavioral_health_gad",
+        "expression": "to_array(@) | [].{ score: value.score, severity: value.severity, date: at } | sort_by(@, &date) | reverse(@)"
+      }
+    ],
+    "options": {
+      "read_only": false,
+      "prefill_form_id": "",
+      "prefill_action_tag": "",
+      "url": "/test-form/index.html",
+      "submit_hidden": false,
+      "is_report": false,
+      "widgets": {}
+    },
+    "published_at": "2025-05-23T09:55:37-04:00"
+  }
+}
