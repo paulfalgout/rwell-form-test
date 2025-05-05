@@ -1,6 +1,7 @@
 import { createApp } from 'vue';
 import { plugin as FormKitPlugin, defaultConfig } from '@formkit/vue';
 import App from './App.vue';
+import './assets/main.css';
 
 // Create the Vue application
 const app = createApp(App);
