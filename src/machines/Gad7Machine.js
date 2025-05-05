@@ -1,5 +1,5 @@
-import { setup, assign } from 'xstate';
-import { values, reduce } from 'lodash';
+import { setup, assign, sendParent } from 'xstate';
+import { values, reduce, set } from 'lodash';
 
 const defaultFormState = {
   survey: {},
@@ -8,12 +8,12 @@ const defaultFormState = {
   severity: '',
 };
 
-function getGadScore(survey) {
+function calculateScore(survey) {
   const scores = values(survey);
   return reduce(scores, (score, value) => score + parseInt(value, 10), 0);
 }
 
-function getGadSeverity(score) {
+function calculateSeverity(score) {
   if (score < 5) return 'Minimal Anxiety';
   if (score < 10) return 'Mild Anxiety';
   if (score < 15) return 'Moderate Anxiety';
@@ -21,27 +21,44 @@ function getGadSeverity(score) {
 }
 
 const formFieldEffects = {
-  survey: (formState, value) => {
-    const score = getGadScore(value);
-    const severity = getGadSeverity(score);
+  survey: (formState) => {
+    const score = calculateScore(formState.survey);
+    const severity = calculateSeverity(score);
+
     return {
       ...formState,
-      survey: value,
       score,
       severity,
     };
   },
 };
 
-const { createMachine } = setup({
+export const gadTabMachine = setup({
   actions: {
     updateField: assign(({ context, event }) => {
-      const updater = formFieldEffects[event.key];
+      const formState = { ...context.formState };
 
+      set(formState, event.key, event.value);
+
+      const updater = formFieldEffects[event.key.split('.')[0]];
+
+      if (updater) {
+        return { formState: updater(context.formState, event.value, event.key) };
+      }
+
+      return { formState };
+    }),
+
+    notifyParent: sendParent(({context, self }) => ({
+      type: 'form.dataUpdated',
+      data: { [self.id]: context.formState },
+    })),
+
+    setData: assign(({  context, event }) => {
+      const updater = formFieldEffects[event.key];
       if (updater) {
         return { formState: updater(context.formState, event.value) };
       }
-
       return {
         formState: {
           ...context.formState,
@@ -49,31 +66,14 @@ const { createMachine } = setup({
         },
       };
     }),
-
-    notifyParent: ({ context, self }) => {
-      self.sendParent({
-        type: 'form.dataUpdated',
-        data: context.formState,
-      });
-    },
-
-    setData: assign(({ event }) => ({
-      formState: { ...defaultFormState, ...event.data },
-    })),
   },
-});
-
-export const gadTabMachine = createMachine({
+}).createMachine({
   id: 'gad',
   context: ({ input }) => ({
     formState: { ...defaultFormState, ...(input?.formState || {}) },
   }),
   initial: 'editing',
   states: {
-    /**
-     * Main editable state for GAD-7 tab.
-     * Handles field updates and incoming data.
-     */
     editing: {
       tags: ['form-editable'],
       on: {
