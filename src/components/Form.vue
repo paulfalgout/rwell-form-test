@@ -28,6 +28,10 @@
         v-if="currentTab === 'gad'"
         :actor="tabActors[currentTab]"
       />
+      <Referrals
+        v-if="currentTab === 'referrals'"
+        :actor="tabActors[currentTab]"
+      />
     </div>
 
     <button
@@ -49,6 +53,7 @@ import formData from '@/static/init-data';
 import formState from '@/static/init-state';
 import SessionForm from '@/components/SessionForm.vue';
 import Gad7Form from '@/components/Gad7Form.vue';
+import Referrals from '@/components/Referrals.vue';
 
 const { inspect } = createBrowserInspector();
 const { snapshot, send } = useMachine(formMachine, { inspect, input: { formData, formState } });

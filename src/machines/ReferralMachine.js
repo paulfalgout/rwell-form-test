@@ -15,49 +15,50 @@ const defaultReferral = {
   notes_value: '',
 };
 
+const fieldReactions = {
+  primary_reason: (formState, value) => {
+    const preservedDate = formState.referral_date;
+    return extend(
+      { primary_reason: value, referral_date: preservedDate },
+      referrals[value] || {},
+    );
+  },
+};
+
 export const createReferralFormMachine = ({ index }) =>
   setup({
     actions: {
       updateField: assign(({ context, event }) => {
         const updater = fieldReactions[event.key];
-
-        if (updater) {
-          return { formState: updater(context.formState, event.value) };
-        }
-
         return {
-          formState: {
-            ...context.formState,
-            [event.key]: event.value,
-          },
+          formState: updater
+            ? updater(context.formState, event.value)
+            : {
+                ...context.formState,
+                [event.key]: event.value,
+              },
         };
       }),
 
-      notifyParent: sendParent(({context }) => ({
-        type: 'form.dataUpdated',
+      notifyParent: sendParent(({ context }) => ({
+        type: 'referral.updated',
         data: context.formState,
       })),
     },
+
     guards: {
-      hasPatientReferred: ({ context }) => {
-        const reason = context.formState.primary_reason;
-        return !!referrals[reason]?.patient_referred;
-      },
-      hasChiefComplaint: ({ context }) => {
-        const reason = context.formState.primary_reason;
-        return !!referrals[reason]?.chief_complaint;
-      },
-      hasCallback: ({ context }) => {
-        const reason = context.formState.primary_reason;
-        return !!referrals[reason]?.callback;
-      },
-      hasNotes: ({ context }) => {
-        const reason = context.formState.primary_reason;
-        return !!referrals[reason]?.notes;
-      },
+      hasPrimaryReason: ({ context }) => !!context.formState.primary_reason,
+      hasPatientReferred: ({ context }) =>
+        !!referrals[context.formState.primary_reason]?.patient_referred,
+      hasChiefComplaint: ({ context }) =>
+        !!referrals[context.formState.primary_reason]?.chief_complaint,
+      hasCallback: ({ context }) =>
+        !!referrals[context.formState.primary_reason]?.callback,
+      hasNotes: ({ context }) =>
+        !!referrals[context.formState.primary_reason]?.notes,
     },
   }).createMachine({
-    id: `referralForm-${ index }`,
+    id: `referralForm-${index}`,
     context: ({ input }) => ({
       formState: { ...defaultReferral, ...(input?.formState || {}) },
     }),
@@ -66,19 +67,21 @@ export const createReferralFormMachine = ({ index }) =>
       idle: {
         always: [
           {
+            guard: 'hasPrimaryReason',
             target: 'configured',
-            cond: ({ context }) => !!context.formState.primary_reason,
           },
-          { target: 'editing' },
+          {
+            target: 'editing',
+          },
         ],
       },
       editing: {
         tags: ['referral-editing'],
         on: {
           'form.updateField': {
-            actions: ['updateField', 'notifyParent'],
+            guard: ({ event }) => event.key === 'primary_reason',
             target: 'configured',
-            cond: ({ event }) => event.key === 'primary_reason',
+            actions: ['updateField', 'notifyParent'],
           },
         },
       },
@@ -92,13 +95,3 @@ export const createReferralFormMachine = ({ index }) =>
       },
     },
   });
-
-const fieldReactions = {
-  primary_reason: (formState, value) => {
-    const preservedDate = formState.referral_date;
-    return extend(
-      { primary_reason: value, referral_date: preservedDate },
-      referrals[value] || {},
-    );
-  },
-};
