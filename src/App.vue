@@ -1,9 +1,9 @@
 <template>
   <div id="app">
-    <SubscriptionForm />
+    <Form />
   </div>
 </template>
 
 <script setup>
-import SubscriptionForm from './components/SubscriptionForm.vue';
+import Form from '@/components/Form.vue';
 </script>
