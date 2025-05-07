@@ -5,7 +5,7 @@
     <div class="flex space-x-2 mb-4">
       <template v-for="tabKey in tabOrder" :key="tabKey">
         <button
-          v-if="tabActors[tabKey]"
+          v-if="tabActors[tabKey] || (tabKey === 'gad-schema' && tabActors['gad'])"
           @click="currentTab = tabKey"
           class="px-4 py-2 rounded border"
           :class="{
@@ -23,6 +23,10 @@
         v-if="currentTab.startsWith('session-')"
         :key="currentTab"
         :actor="tabActors[currentTab]"
+      />
+      <Gad7SchemaForm
+        v-if="currentTab === 'gad-schema'"
+        :actor="tabActors['gad']"
       />
       <Gad7Form
         v-if="currentTab === 'gad'"
@@ -53,6 +57,7 @@ import formData from '@/static/init-data';
 import formState from '@/static/init-state';
 import SessionForm from '@/components/SessionForm.vue';
 import Gad7Form from '@/components/Gad7Form.vue';
+import Gad7SchemaForm from '@/components/Gad7Form-schema.vue';
 import Referrals from '@/components/Referrals.vue';
 
 const { inspect } = createBrowserInspector();
@@ -67,6 +72,7 @@ currentTab.value = tabOrder[0]
 
 function getTabLabel(key) {
   if (key === 'gad') return 'GAD-7';
+  if (key === 'gad-schema') return 'GAD-7 Schema';
   if (key === 'referrals') return 'Referrals';
 
   const index = key.split('-')[1];

@@ -118,7 +118,7 @@ export const formMachine = setup({
       return {
         formState,
         tabActors,
-        tabOrder: [...tabOrder, 'gad', 'referrals'],
+        tabOrder: [...tabOrder, 'gad', 'gad-schema', 'referrals'],
       };
     }),
   },
