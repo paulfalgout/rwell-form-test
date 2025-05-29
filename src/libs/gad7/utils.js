@@ -17,7 +17,6 @@ const answers = {
 };
 
 function serialize({ formState, formData, key }) {
-  console.log('serialize', formState, formData, key);
   if (!formState.gad) return formData;
   const { score, how_difficult, survey, severity } = formState.gad;
   const readableSurvey = reduce(survey, (memo, a, q) => {
@@ -27,7 +26,6 @@ function serialize({ formState, formData, key }) {
     };
     return memo;
   }, {});
-  console.log('readableSurvey', readableSurvey, formState, formData, key);
   set(formData, key, {
     survey: readableSurvey,
     score,
@@ -43,7 +41,7 @@ function deserialize({ formState, formData, key }) {
 
   const { survey, score, how_difficult, severity } = gadField;
   const formattedSurvey = reduce(survey, (memo, { answer }, key) => {
-    memo[key] = findKey(gad.answers, str => str === answer);
+    memo[key] = findKey(answers, str => str === answer);
     return memo;
   }, {});
 

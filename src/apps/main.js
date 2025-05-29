@@ -10,5 +10,15 @@ const app = createApp(Form);
 // Register FormKit plugin
 app.use(FormKitPlugin, defaultConfig);
 
+/**
+ * Global render / watcher / lifecycle error handler
+ */
+app.config.errorHandler = (err, instance, info) => {
+  // TODO add datadog
+  console.error('💥 Vue render error:', info, err);
+
+  setTimeout(() => { throw err; });
+};
+
 // Mount the application
 app.mount('#app');

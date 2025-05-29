@@ -34,6 +34,9 @@ const formFieldEffects = {
 };
 
 export const gadTabMachine = setup({
+  guards: {
+    isEditable: ({ context }) => context.isEditable,
+  },
   actions: {
     updateField: assign(({ context, event }) => {
       const formState = { ...context.formState };
@@ -70,10 +73,20 @@ export const gadTabMachine = setup({
 }).createMachine({
   id: 'gad',
   context: ({ input }) => ({
+    isEditable: input.isEditable,
     formState: { ...defaultFormState, ...(input?.formState || {}) },
   }),
-  initial: 'editing',
+  initial: 'initializing',
   states: {
+    initializing: {
+      always: [
+        { target: 'editing', guard: 'isEditable' },
+        { target: 'viewing' },
+      ],
+    },
+    viewing: {
+      tags: ['form-view-only'],
+    },
     editing: {
       tags: ['form-editable'],
       on: {

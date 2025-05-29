@@ -20,15 +20,22 @@
 <script setup>
 import { computed } from 'vue';
 import { useMachine } from '@xstate/vue';
-import { formMachine } from './form.machine';
+import { formMachine, bridge } from './form.machine';
 import { createBrowserInspector } from '@statelyai/inspect';
 import Gad7Form from '@/libs/gad7/Gad7Form.vue';
 import { getQueryParam } from '@/libs/shared/utils/query';
 
 const responseId = getQueryParam('responseId');
-console.log('Response ID:', responseId);
 const { inspect } = createBrowserInspector();
 const { snapshot, send } = useMachine(formMachine, { inspect, input: { responseId } });
+
+bridge.on('form:submit', () => {
+  send({ type: 'form.submit' });
+});
+
+bridge.on('form:error', (err) => {
+  send({ type: 'form.error', data: err });
+});
 
 const gadActor = computed(() => snapshot.value.context.gadActor);
 </script>

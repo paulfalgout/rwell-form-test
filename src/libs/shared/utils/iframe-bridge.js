@@ -86,7 +86,8 @@ export class IframeBridge {
   fetchFormResponse(responseId) {
     return this.request('fetch:form:response', { responseId });
   }
-  submitForm(formState, formData) {
-    return this.request('submit:form', { response: { formState, formData } });
+  submitForm(formState = {}, formData = {}) {
+    const response = { data: formState, ...formData };
+    return this.request('submit:form', { response });
   }
 }
