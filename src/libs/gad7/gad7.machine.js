@@ -1,5 +1,6 @@
-import { setup, assign, sendParent } from 'xstate';
+
 import { values, reduce, set } from 'lodash';
+import { createChildFormMachine } from '@/libs/shared/base-machines/child-form.machine';
 
 const defaultFormState = {
   survey: {},
@@ -21,7 +22,9 @@ function calculateSeverity(score) {
 }
 
 const formFieldEffects = {
-  survey: (formState) => {
+  survey: (formState, surveyItem, key) => {
+    set(formState, key, surveyItem);
+
     const score = calculateScore(formState.survey);
     const severity = calculateSeverity(score);
 
@@ -33,70 +36,18 @@ const formFieldEffects = {
   },
 };
 
-export const gadTabMachine = setup({
-  guards: {
-    isEditable: ({ context }) => context.isEditable,
+
+const gad7Orchestrator = {
+  defaultFormState,
+  updateField: (context, event) => {
+    const updater = formFieldEffects[event.key.split('.')[0]];
+
+    if (!updater) return;
+
+    return updater({ ...context.formState }, event.value, event.key);
   },
-  actions: {
-    updateField: assign(({ context, event }) => {
-      const formState = { ...context.formState };
+};
 
-      set(formState, event.key, event.value);
-
-      const updater = formFieldEffects[event.key.split('.')[0]];
-
-      if (updater) {
-        return { formState: updater(context.formState, event.value, event.key) };
-      }
-
-      return { formState };
-    }),
-
-    notifyParent: sendParent(({context, self }) => ({
-      type: 'form.dataUpdated',
-      data: { [self.id]: context.formState },
-    })),
-
-    setData: assign(({  context, event }) => {
-      const updater = formFieldEffects[event.key];
-      if (updater) {
-        return { formState: updater(context.formState, event.value) };
-      }
-      return {
-        formState: {
-          ...context.formState,
-          [event.key]: event.value,
-        },
-      };
-    }),
-  },
-}).createMachine({
-  id: 'gad',
-  context: ({ input }) => ({
-    isEditable: input.isEditable,
-    formState: { ...defaultFormState, ...(input?.formState || {}) },
-  }),
-  initial: 'initializing',
-  states: {
-    initializing: {
-      always: [
-        { target: 'editing', guard: 'isEditable' },
-        { target: 'viewing' },
-      ],
-    },
-    viewing: {
-      tags: ['form-view-only'],
-    },
-    editing: {
-      tags: ['form-editable'],
-      on: {
-        'form.updateField': {
-          actions: ['updateField', 'notifyParent'],
-        },
-        'form.setData': {
-          actions: ['setData', 'notifyParent'],
-        },
-      },
-    },
-  },
-});
+export function createGad7Machine({ bridge, orchestrator = gad7Orchestrator, id = 'gad7-machine' }) {
+  return createChildFormMachine({ bridge, orchestrator, id });
+}

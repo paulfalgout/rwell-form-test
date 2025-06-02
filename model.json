@@ -5,7 +5,7 @@
     "name": "Test GAD7",
     "details": "",
     "fields": [
-      "fields.behavioral_health_gad",
+      "fields.gad7",
       "action.id",
       "clinician.id",
       "clinician.name",
@@ -13,7 +13,7 @@
     ],
     "filtered": [
       {
-        "field": "field_history.behavioral_health_gad",
+        "field": "field_history.gad7",
         "expression": "to_array(@) | [].{ score: value.score, severity: value.severity, date: at } | sort_by(@, &date) | reverse(@)"
       }
     ],

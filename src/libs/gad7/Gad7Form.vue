@@ -83,7 +83,7 @@
   <script setup>
   import { map } from 'lodash';
   import { useSelector } from '@xstate/vue';
-  import * as gad from './utils';
+  import * as gad7 from './utils';
 
   const props = defineProps({
     actor: Object,
@@ -101,8 +101,8 @@
     });
   };
 
-  const questions = gad.questions;
-  const answerOptions = map(gad.answers, (label, value) => ({ label, value }));
+  const questions = gad7.questions;
+  const answerOptions = map(gad7.answers, (label, value) => ({ label, value }));
   const difficultyOptions = [
     'Not difficult at all',
     'Somewhat difficult',

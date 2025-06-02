@@ -6,13 +6,6 @@
         v-if="gadActor"
         :actor="gadActor"
       />
-      <button
-        @click="send({ type: 'form.submit' })"
-        :disabled="!snapshot.can({ type: 'form.submit' })"
-        class="mt-6 px-6 py-2 bg-blue-600 text-white rounded disabled:opacity-50"
-      >
-        Submit Form
-      </button>
     </div>
   </div>
 </template>
@@ -20,22 +13,18 @@
 <script setup>
 import { computed } from 'vue';
 import { useMachine } from '@xstate/vue';
-import { formMachine, bridge } from './form.machine';
 import { createBrowserInspector } from '@statelyai/inspect';
+import orchestrator from './orchestrator';
+import { createFormMachine } from '@/libs/shared/base-machines/form.machine';
 import Gad7Form from '@/libs/gad7/Gad7Form.vue';
 import { getQueryParam } from '@/libs/shared/utils/query';
 
-const responseId = getQueryParam('responseId');
 const { inspect } = createBrowserInspector();
-const { snapshot, send } = useMachine(formMachine, { inspect, input: { responseId } });
 
-bridge.on('form:submit', () => {
-  send({ type: 'form.submit' });
-});
+const responseId = getQueryParam('responseId');
+const formMachine = createFormMachine({ orchestrator });
 
-bridge.on('form:error', (err) => {
-  send({ type: 'form.error', data: err });
-});
+const { snapshot } = useMachine(formMachine, { inspect, input: { responseId } });
 
-const gadActor = computed(() => snapshot.value.context.gadActor);
+const gadActor = computed(() => snapshot.value.children.gad7);
 </script>

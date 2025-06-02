@@ -16,36 +16,37 @@ const answers = {
   3: 'Nearly every day',
 };
 
-function serialize({ formState, formData, key }) {
-  if (!formState.gad) return formData;
-  const { score, how_difficult, survey, severity } = formState.gad;
-  const readableSurvey = reduce(survey, (memo, a, q) => {
-    memo[q] = {
-      question: questions[q],
-      answer: answers[a],
+function serialize({ formState, formData, stateKey = 'gad7', dataKey = 'fields.gad7' }) {
+  const gadField = get(formState, stateKey);
+  if (!gadField) return formData;
+
+  const { survey, score, severity, how_difficult } = gadField;
+  const readableSurvey = reduce(survey, (memo, answer, question) => {
+    memo[question] = {
+      question: questions[question],
+      answer: answers[answer],
     };
     return memo;
   }, {});
-  set(formData, key, {
-    survey: readableSurvey,
-    score,
-    severity,
-    how_difficult,
-  });
+
+  set(formState, dataKey, { survey: readableSurvey, score, severity, how_difficult});
+
   return formData;
 }
 
-function deserialize({ formState, formData, key }) {
-  const gadField = get(formData, key);
-  if (!gadField) return formState.gad;
+function deserialize({ formState, formData, stateKey = 'gad7', dataKey = 'fields.gad7' }) {
+  const gadField = get(formData, dataKey);
+  if (!gadField) return formState;
 
-  const { survey, score, how_difficult, severity } = gadField;
-  const formattedSurvey = reduce(survey, (memo, { answer }, key) => {
-    memo[key] = findKey(answers, str => str === answer);
+  const { survey, score, severity, how_difficult } = gadField;
+  const formattedSurvey = reduce(survey, (memo, { answer }, index) => {
+    memo[index] = findKey(answers, str => str === answer);
     return memo;
   }, {});
 
-  return { score, how_difficult, survey: formattedSurvey, severity };
+  set(formState, stateKey, { survey: formattedSurvey, score, severity, how_difficult});
+
+  return formState;
 }
 
 export {
