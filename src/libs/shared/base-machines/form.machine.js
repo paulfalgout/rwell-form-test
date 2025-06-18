@@ -70,7 +70,7 @@ export function createFormMachine({ orchestrator = defaultOrchestrator, id = 'ba
     },
     actions: {
       ingestNewForm: assign(({ event }) => {
-        const { formSubmission, storedSubmission, formData, isReadOnly } = event.output;
+        const { formSubmission, storedSubmission, formData, isReadOnly } = event.output || {};
         return {
           formState: storedSubmission || formSubmission,
           formData,
