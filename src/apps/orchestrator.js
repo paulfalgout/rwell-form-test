@@ -1,16 +1,16 @@
-import { createGad7Machine } from '@/libs/gad7/gad7.machine';
-import * as gad7 from '@/libs/gad7/utils';
+import { createPatientInformationMachine } from '@/libs/patient_information/patientInformation.machine';
+import * as patientInformation from '@/libs/patient_information/utils';
 
 export default {
   initialize(context, spawn, bridge) {
     let formState = { ...context.formState };
 
-    formState = gad7.deserialize({ formState, formData: context.formData });
+    formState = patientInformation.deserialize({ formState, formData: context.formData });
 
-    spawn(createGad7Machine({ bridge }), {
-      id: 'gad7',
+    spawn(createPatientInformationMachine({ bridge }), {
+      id: 'patientInformation',
       input: {
-        formState: formState.gad7 || {},
+        formState: formState.patient_information || {},
         isEditable: !context.isReadOnly,
       },
     });
@@ -20,7 +20,7 @@ export default {
 
   getFormData(formState) {
     let formData = {};
-    formData = gad7.serialize({ formState, formData });
+    formData = patientInformation.serialize({ formState, formData });
     // formData = foo.serialize({ formState, formData, key: 'fields.foo' });
     return formData;
   },

@@ -22,7 +22,7 @@ export function createChildFormMachine({ orchestrator = defaultOrchestrator, id 
         const formState = { ...context.formState };
 
         set(formState, event.key, event.value);
-
+        console.log('formState:', formState);
         return { formState };
       }),
 
