@@ -1,5 +1,5 @@
 import { createChildFormMachine } from '@/libs/shared/base-machines/child-form.machine';
-import { last, get } from 'lodash';
+import { last } from 'lodash';
 
 const defaultFormState = {
   patient_information: {
