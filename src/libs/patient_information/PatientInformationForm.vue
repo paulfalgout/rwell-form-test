@@ -8,35 +8,35 @@
       <div class="space-y-4 w-full">
         <FormKit
           type="text"
-          name="patient_information_name"
+          name="name"
           label="Patient Name"
-          :value=" formState.patient_information.name "
-          @change="handleFieldUpdate('patient_information.name', $event.target.value)"
+          :value=" formState.name "
+          @change="handleFieldUpdate('name', $event.target.value)"
           :disabled=" isReadOnly "
         />
         <FormKit
           type="date"
-          name="patient_information_dob"
+          name="dob"
           label="Birth Date"
-          :value=" formState.patient_information.dob "
-          @change="handleFieldUpdate('patient_information.dob', $event.target.value)"
+          :value=" formState.dob "
+          @change="handleFieldUpdate('dob', $event.target.value)"
           :disabled=" isReadOnly "
         />
         <FormKit
           type="text"
-          name="patient_information_mrn"
+          name="mrn"
           label="MRN"
-          :value=" formState.patient_information.mrn "
-          @change="handleFieldUpdate('patient_information.mrn', $event.target.value)"
+          :value=" formState.mrn "
+          @change="handleFieldUpdate('mrn', $event.target.value)"
           :disabled=" isReadOnly "
         />
 
         <!-- Phone Numbers -->
         <ContactList
-          :items=" formState.patient_information.phones "
+          :items=" formState.phones "
           :labels=" phoneLabels "
-          :errors=" formState.patient_information.errors.number "
-          field-key="patient_information.phones"
+          :errors=" validationState.phones "
+          field-key="phones"
           list-name="phones"
           legend="Phone Numbers"
           input-type="text"
@@ -48,10 +48,10 @@
 
         <!-- Email Addresses -->
         <ContactList
-          :items=" formState.patient_information.emails "
+          :items=" formState.emails "
           :labels=" emailLabels "
-          :errors=" formState.patient_information.errors.address "
-          field-key="patient_information.emails"
+          :errors=" validationState.emails "
+          field-key="emails"
           list-name="emails"
           legend="Email Addresses"
           input-type="email"
@@ -100,6 +100,7 @@
 
   const send = props.actor.send;
   const formState = useSelector(props.actor, s => s.context.formState);
+  const validationState = useSelector(props.actor, s => s.context.validationState);
   const isReadOnly = useSelector(props.actor, s => s.hasTag('form-view-only'));
 
   const handleFieldUpdate = (key, value) => {

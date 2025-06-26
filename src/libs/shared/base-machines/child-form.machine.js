@@ -6,6 +6,9 @@ const defaultOrchestrator = {
   updateField: (context, event) => {
     return;
   },
+  validateField: (context, event) => {
+    return;
+  },
 };
 
 export function createChildFormMachine({ orchestrator = defaultOrchestrator, id = 'child-form-machine', bridge } = {}) {
@@ -26,9 +29,21 @@ export function createChildFormMachine({ orchestrator = defaultOrchestrator, id 
         return { formState };
       }),
 
-      notifyParent: sendParent(({context, self }) => ({
+      validateField: assign(({ context, event }) => {
+        const validationStateUpdated = orchestrator.validateField(context, event);
+
+        if (validationStateUpdated) return { validationState: validationStateUpdated };
+
+        const validationState = { ...context.validationStateUpdated };
+
+        set(validationState, event.key, event.value);
+        console.log('validationState:', validationState);
+        return { validationState };
+      }),
+
+      notifyParent: sendParent(({ context, self }) => ({
         type: 'form.dataUpdated',
-        data: { [self.id]: context.formState },
+        data: { [self.id]: { ...context.formState, validationState: context.validationState } },
       })),
     },
   }).createMachine({
@@ -36,6 +51,7 @@ export function createChildFormMachine({ orchestrator = defaultOrchestrator, id 
     context: ({ input }) => ({
       isEditable: input.isEditable,
       formState: { ...orchestrator.defaultFormState, ...(input?.formState || {}) },
+      validationState: input?.formState || {},
     }),
     initial: 'initializing',
     states: {
@@ -52,7 +68,7 @@ export function createChildFormMachine({ orchestrator = defaultOrchestrator, id 
         tags: ['form-editable'],
         on: {
           'form.updateField': {
-            actions: ['updateField', 'notifyParent'],
+            actions: ['updateField', 'validateField', 'notifyParent'],
           },
         },
       },

@@ -1,62 +1,69 @@
 import { createChildFormMachine } from '@/libs/shared/base-machines/child-form.machine';
-import { last } from 'lodash';
+import { last, findIndex, pullAt } from 'lodash';
 
 const defaultFormState = {
-  patient_information: {
-    mrn: '',
-    name: '',
-    preferred_name: '',
-    dob: '',
-    phones: [
-      {
-        number: '',
-        label: '',
-      }
-    ],
-    emails: [
-      {
-        address: '',
-        label: '',
-      }
-    ],
-    errors: {},
-  },
+  mrn: '',
+  name: '',
+  preferred_name: '',
+  dob: '',
+  phones: [
+    {
+      number: '',
+      label: '',
+    }
+  ],
+  emails: [
+    {
+      address: '',
+      label: '',
+    }
+  ],
+  errors: {},
 };
 
-const formFieldEffects = {
-  number: (formState, value, key) => {
-    const numberErrors = [];
+const formFieldEffects = {};
 
-    if (value && !/^\+?\d{7,15}$/.test(value)) {
-      numberErrors.push('Invalid phone number.');
+const validateFields = {
+  number: (validationState, value, key) => {
+    const newState = { ...validationState };
+    const numberErrors = [...newState.phones || []];
+    const prevErr = findIndex(numberErrors, { key });
+    const isInvalid = value && !/^\+?\d{7,15}$/.test(value);
+
+    if (isInvalid) {
+      if (prevErr === -1) numberErrors.push({ error: 'Invalid phone number.', key });
+    } else if (prevErr !== -1) {
+      pullAt(numberErrors, prevErr);
     }
 
     if (numberErrors.length) {
-      formState.patient_information.errors.number = numberErrors;
+      newState.phones = numberErrors;
     } else {
-      delete formState.patient_information.errors.number;
+      delete newState.phones;
     }
 
-    return {
-      ...formState
-    };
+    return newState;
   },
-  address: (formState, value, key) => {
-    const addressErrors = [];
-    
-    if (value && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(value)) {
-      addressErrors.push('Invalid email address.');
+
+  address: (validationState, value, key) => {
+    const newState = { ...validationState };
+    const addressErrors = [...newState.emails || []];
+    const prevErr = findIndex(addressErrors, { key });
+    const isInvalid = value && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(value);
+
+    if (isInvalid) {
+      if (prevErr === -1) addressErrors.push({ error: 'Invalid email address.', key });
+    } else {
+      pullAt(addressErrors, prevErr);
     }
 
     if (addressErrors.length) {
-      formState.patient_information.errors.address = addressErrors;
+      newState.emails = addressErrors;
     } else {
-      delete formState.patient_information.errors.address;
+      delete newState.emails;
     }
 
-    return {
-      ...formState
-    }
+    return newState;
   }
 };
 
@@ -71,17 +78,32 @@ const patientInformationOrchestrator = {
     if (!updater) {
       return {
         ...context.formState,
-        patient_information: {
-          ...context.formState.patient_information,
-          [key.split('.').pop()]: value,
-        },
+        [key.split('.').pop()]: value,
       };
     }
 
-    return updater({ ...context.formState }, value, key);
+    return updater({ formState: context.formState }, value, key);
+  },
+  validateField: (context, event) => {
+    const { key, value } = event;
+    const inputKey = last(key.split('.'));
+
+    const validator = validateFields[inputKey];
+
+    if (!validator) {
+      return {
+        ...context.validationState,
+      };
+    }
+
+    return validator(context.validationState, value, key);
   },
 };
 
-export function createPatientInformationMachine({ bridge, orchestrator = patientInformationOrchestrator, id = 'patient-information-machine' }) {
+export function createPatientInformationMachine({
+  bridge,
+  orchestrator = patientInformationOrchestrator,
+  id = 'patient-information-machine'
+}) {
   return createChildFormMachine({ bridge, orchestrator, id });
 }

@@ -28,7 +28,7 @@
             :name=" uniqueField "
             :label=" inputLabel "
             :placeholder=" inputPlaceholder "
-            :errors=" props.errors "
+            :errors=" getError(index) "
           />
           <button
             type="button"
@@ -52,11 +52,12 @@
 
 <script setup>
   import { FormKitIcon } from '@formkit/vue';
+  import { find } from 'lodash';
 
   const props = defineProps({
     items: Array,
     labels: Array,
-    errors: Object,
+    errors: Array,
     fieldKey: String,
     listName: String,
     legend: String,
@@ -72,6 +73,10 @@
   };
 
   const getInputKey = index => `${ props.fieldKey }[${ index }].${ uniqueField }`;
+  const getError = index => {
+    const { error } = find(props.errors, ({ key }) => key === getInputKey(index)) || {};
+    return [error || ''];
+  }
 
   const getEmptyItem = () => {
     return props.inputType === 'email'

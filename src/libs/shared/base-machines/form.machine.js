@@ -37,12 +37,12 @@ const defaultOrchestrator = {
     return {};
   },
 
-  updateFormState({ formState }, { data }) {
-    return { ...formState, ...data };
+  updateFormState({ formState, validationState }, { data }) {
+    return { ...formState, ...validationState, ...data };
   },
 
-  async validateForm(formState) {
-    // No validation errors
+  async validateForm(context) {
+    console.log(context);
   },
 };
 
@@ -56,8 +56,8 @@ export function createFormMachine({ orchestrator = defaultOrchestrator, id = 'ba
         return bridge.submitForm(formState, formData);
       }),
       validate: fromPromise(async ({ input }) => {
-        const { formState } = input;
-        return orchestrator.validateForm(formState);
+        const { context } = input;
+        return orchestrator.validateForm(context);
       }),
       loadNewForm: fromPromise(() => bridge.fetchFormData()),
       loadResponseForm: fromPromise(({ input }) => bridge.fetchFormResponse(input.responseId)),
@@ -86,12 +86,13 @@ export function createFormMachine({ orchestrator = defaultOrchestrator, id = 'ba
         };
       }),
       updateData: assign(({ context, event }) => {
-        const formState = orchestrator.updateFormState(context, event);
-        return { formState };
+        const { formState, validationState } = orchestrator.updateFormState(context, event);
+        return { formState, validationState };
       }),
-      handleError: assign(({ event }) => ({
-        error: event.data,
-      })),
+      handleError: assign(({ context, event }) => {
+        context.error = event?.error?.message || null;
+        return context;
+      }),
       initialize: assign(({ context, spawn, self }) => {
         spawn(debounceDraftSave, {
           id: 'draftSave',
@@ -112,6 +113,7 @@ export function createFormMachine({ orchestrator = defaultOrchestrator, id = 'ba
     context: ({ input }) => ({
       formState: {},
       formData: {},
+      validationState: {},
       responseId: input?.responseId || null,
       isReadOnly: false,
       error: null,
@@ -166,6 +168,7 @@ export function createFormMachine({ orchestrator = defaultOrchestrator, id = 'ba
           'form.dataUpdated': {
             actions: [
               'updateData',
+              'handleError',
               sendTo('draftSave', ({ event }) => event),
             ],
           },
@@ -180,7 +183,7 @@ export function createFormMachine({ orchestrator = defaultOrchestrator, id = 'ba
       validating: {
         invoke: {
           src: 'validate',
-          input: ({ context }) => ({ formState: context.formState }),
+          input: ({ context }) => ({ context }),
           onDone: {
             target: 'submitting',
             actions: sendTo('draftSave', ({ event }) => event),
