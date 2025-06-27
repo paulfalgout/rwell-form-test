@@ -20,6 +20,7 @@
           label="Birth Date"
           :value=" formState.dob "
           @change="handleFieldUpdate('dob', $event.target.value)"
+          :errors=" getErrorMessage('dob', errors) "
           :disabled=" isReadOnly "
         />
         <FormKit
@@ -27,6 +28,7 @@
           name="mrn"
           label="MRN"
           :value=" formState.mrn "
+          :errors=" getErrorMessage('mrn', errors) "
           @change="handleFieldUpdate('mrn', $event.target.value)"
           :disabled=" isReadOnly "
         />
@@ -34,8 +36,8 @@
         <!-- Phone Numbers -->
         <ContactList
           :items=" formState.phones "
+          :errors=" errors "
           :labels=" phoneLabels "
-          :errors=" validationState.phones "
           field-key="phones"
           list-name="phones"
           legend="Phone Numbers"
@@ -49,8 +51,8 @@
         <!-- Email Addresses -->
         <ContactList
           :items=" formState.emails "
+          :errors=" errors "
           :labels=" emailLabels "
-          :errors=" validationState.emails "
           field-key="emails"
           list-name="emails"
           legend="Email Addresses"
@@ -78,6 +80,7 @@
   import ConfirmationModal from '../shared/components/ConfirmationModal.vue';
   import { ref, computed } from 'vue';
   import { getNode } from '@formkit/core';
+  import { find } from 'lodash';
 
   const props = defineProps({
     actor: Object,
@@ -100,8 +103,13 @@
 
   const send = props.actor.send;
   const formState = useSelector(props.actor, s => s.context.formState);
-  const validationState = useSelector(props.actor, s => s.context.validationState);
+  const errors = useSelector(props.actor, s => s.context.errors);
   const isReadOnly = useSelector(props.actor, s => s.hasTag('form-view-only'));
+
+  const getErrorMessage = (name, errors) => {
+    if (!errors.length) return [''];
+    return [find(errors, ({ key }) => key.includes(name))?.message || ''];
+  };
 
   const handleFieldUpdate = (key, value) => {
     send({ type: 'form.updateField', key, value });

@@ -6,9 +6,6 @@ const defaultOrchestrator = {
   updateField: (context, event) => {
     return;
   },
-  validateField: (context, event) => {
-    return;
-  },
 };
 
 export function createChildFormMachine({ orchestrator = defaultOrchestrator, id = 'child-form-machine', bridge } = {}) {
@@ -25,25 +22,13 @@ export function createChildFormMachine({ orchestrator = defaultOrchestrator, id 
         const formState = { ...context.formState };
 
         set(formState, event.key, event.value);
-        console.log('formState:', formState);
+
         return { formState };
-      }),
-
-      validateField: assign(({ context, event }) => {
-        const validationStateUpdated = orchestrator.validateField(context, event);
-
-        if (validationStateUpdated) return { validationState: validationStateUpdated };
-
-        const validationState = { ...context.validationStateUpdated };
-
-        set(validationState, event.key, event.value);
-        console.log('validationState:', validationState);
-        return { validationState };
       }),
 
       notifyParent: sendParent(({ context, self }) => ({
         type: 'form.dataUpdated',
-        data: { [self.id]: { ...context.formState, validationState: context.validationState } },
+        data: { [self.id]: { ...context.formState } },
       })),
     },
   }).createMachine({
@@ -51,9 +36,16 @@ export function createChildFormMachine({ orchestrator = defaultOrchestrator, id 
     context: ({ input }) => ({
       isEditable: input.isEditable,
       formState: { ...orchestrator.defaultFormState, ...(input?.formState || {}) },
-      validationState: input?.formState || {},
+      errors: [],
     }),
     initial: 'initializing',
+    on: {
+      'form:setErrors': {
+        actions: assign({
+          errors: ({ event }) => { return event.errors }
+        }),
+      },
+    },
     states: {
       initializing: {
         always: [
@@ -68,7 +60,7 @@ export function createChildFormMachine({ orchestrator = defaultOrchestrator, id 
         tags: ['form-editable'],
         on: {
           'form.updateField': {
-            actions: ['updateField', 'validateField', 'notifyParent'],
+            actions: ['updateField', 'notifyParent'],
           },
         },
       },

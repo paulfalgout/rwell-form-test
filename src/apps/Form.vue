@@ -2,12 +2,14 @@
   <div id="app">
     <div class="form p-4 max-w-4xl mx-auto">
       <h1 class="text-2xl font-bold mb-4">XState Form Example</h1>
-      <p
-        v-if="snapshot.context.error"
-        class="text-red-600 bg-red-50 p-3 rounded border-l-4 border-red-400 mb-4"
-      >
-        {{ snapshot.context.error }}
-      </p>
+      <div v-if="snapshot.context.error?.errors">
+        <p
+          v-for="(error, index) in snapshot.context.error.errors"
+          class="text-red-600 bg-red-50 p-3 rounded border-l-4 border-red-400 mb-4"
+        >
+          {{ error.message }}
+        </p>
+      </div>
       <FormKit
         type="form"
         @submit=" handleSubmit "

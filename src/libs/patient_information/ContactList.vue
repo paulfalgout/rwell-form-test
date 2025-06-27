@@ -26,9 +26,9 @@
             @change="$emit('update', getInputKey(index), $event.target.value)"
             :type=" props.inputType "
             :name=" uniqueField "
+            :errors=" [getErrorMessage(index, props.errors)] "
             :label=" inputLabel "
             :placeholder=" inputPlaceholder "
-            :errors=" getError(index) "
           />
           <button
             type="button"
@@ -73,10 +73,8 @@
   };
 
   const getInputKey = index => `${ props.fieldKey }[${ index }].${ uniqueField }`;
-  const getError = index => {
-    const { error } = find(props.errors, ({ key }) => key === getInputKey(index)) || {};
-    return [error || ''];
-  }
+
+  const getErrorMessage = (index, errors) => find(errors, ({ key }) => key.includes(getInputKey(index)))?.message || '';
 
   const getEmptyItem = () => {
     return props.inputType === 'email'

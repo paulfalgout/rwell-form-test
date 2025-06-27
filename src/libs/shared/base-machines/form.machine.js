@@ -1,6 +1,7 @@
 import { setup, assign, fromPromise, fromCallback, sendTo } from 'xstate';
-import { debounce } from 'lodash';
+import { debounce, groupBy } from 'lodash';
 import { IframeBridge } from '@/libs/shared/utils/iframe-bridge';
+import { parseErrorMessage } from '@/libs/shared/utils/errors';
 
 const bridge = new IframeBridge();
 
@@ -37,8 +38,8 @@ const defaultOrchestrator = {
     return {};
   },
 
-  updateFormState({ formState, validationState }, { data }) {
-    return { ...formState, ...validationState, ...data };
+  updateFormState({ formState }, { data }) {
+    return { ...formState, ...data };
   },
 
   async validateForm(context) {
@@ -55,8 +56,8 @@ export function createFormMachine({ orchestrator = defaultOrchestrator, id = 'ba
         const formData = orchestrator.getFormData(formState);
         return bridge.submitForm(formState, formData);
       }),
-      validate: fromPromise(async ({ input }) => {
-        const { context } = input;
+      validate: fromPromise(async (param) => {
+        const { context } = param.input;
         return orchestrator.validateForm(context);
       }),
       loadNewForm: fromPromise(() => bridge.fetchFormData()),
@@ -86,12 +87,47 @@ export function createFormMachine({ orchestrator = defaultOrchestrator, id = 'ba
         };
       }),
       updateData: assign(({ context, event }) => {
-        const { formState, validationState } = orchestrator.updateFormState(context, event);
-        return { formState, validationState };
+        const { formState } = orchestrator.updateFormState(context, event);
+        return { formState };
       }),
       handleError: assign(({ context, event }) => {
-        context.error = event?.error?.message || null;
-        return context;
+        const message = event.error?.message;
+        const parsed = message ? parseErrorMessage(message) : [];
+
+        if (context.childRefs) {
+          const groupedErrors = groupBy(parsed, 'childRef');
+
+          context.childRefs.forEach(childRef => {
+            const childErrors = groupedErrors[childRef.id];
+            // Only send relevant errors to child
+            if (childErrors) {
+              childRef.send({
+                type: 'form:setErrors',
+                errors: childErrors,
+              });
+            }
+          });
+        }
+
+        return {
+          ...context,
+          error: { errors: parsed },
+        };
+      }),
+      resetError: assign(({ context }) => {
+        if (context.childRefs) {
+          context.childRefs.forEach(childRef => {
+            childRef.send({
+              type: 'form:setErrors',
+              errors: [],
+            });
+          });
+        }
+
+        return {
+          ...context,
+          error: null,
+        };
       }),
       initialize: assign(({ context, spawn, self }) => {
         spawn(debounceDraftSave, {
@@ -113,7 +149,6 @@ export function createFormMachine({ orchestrator = defaultOrchestrator, id = 'ba
     context: ({ input }) => ({
       formState: {},
       formData: {},
-      validationState: {},
       responseId: input?.responseId || null,
       isReadOnly: false,
       error: null,
@@ -168,7 +203,6 @@ export function createFormMachine({ orchestrator = defaultOrchestrator, id = 'ba
           'form.dataUpdated': {
             actions: [
               'updateData',
-              'handleError',
               sendTo('draftSave', ({ event }) => event),
             ],
           },
@@ -186,7 +220,10 @@ export function createFormMachine({ orchestrator = defaultOrchestrator, id = 'ba
           input: ({ context }) => ({ context }),
           onDone: {
             target: 'submitting',
-            actions: sendTo('draftSave', ({ event }) => event),
+            actions: [
+              'resetError',
+              sendTo('draftSave', ({ event }) => event)
+            ],
           },
           onError: {
             target: 'editing',
