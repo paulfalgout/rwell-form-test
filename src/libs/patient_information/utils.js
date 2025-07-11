@@ -1,10 +1,10 @@
-import { get } from 'lodash';
+import { get, set } from 'lodash';
 
-function serialize({ formState, formData, stateKey = 'patient_information', dataKey = 'patient_information' }) {
+function serialize({ formState, formData, stateKey = 'patientInformation', dataKey = 'patient_information' }) {
   const patientInformation = get(formState, stateKey);
   if (!patientInformation) return formData;
 
-  // Handle field formatting for submit
+  set(formData, dataKey, patientInformation);
 
   return formData;
 }

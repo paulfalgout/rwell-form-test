@@ -19,6 +19,10 @@
           v-if="patientInformationActor"
           :actor=" patientInformationActor "
         />
+        <InsuranceForm
+          v-if="insuranceActor"
+          :actor=" insuranceActor "
+        />
       </FormKit>
     </div>
   </div>
@@ -31,6 +35,7 @@
   import orchestrator from './orchestrator';
   import { createFormMachine } from '@/libs/shared/base-machines/form.machine';
   import PatientInformationForm from '@/libs/patient_information/PatientInformationForm.vue';
+  import InsuranceForm from '@/libs/insurance/InsuranceForm.vue';
 
   import { getQueryParam } from '@/libs/shared/utils/query';
 
@@ -42,6 +47,7 @@
   const { snapshot, send } = useMachine(formMachine, { inspect, input: { responseId } });
 
   const patientInformationActor = computed(() => snapshot.value.children.patientInformation);
+  const insuranceActor = computed(() => snapshot.value.children.insurance);
 
   const handleSubmit = () => {
     send({ type: 'form.submit' });

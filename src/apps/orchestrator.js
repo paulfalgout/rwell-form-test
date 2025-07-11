@@ -1,6 +1,8 @@
 import { createPatientInformationMachine } from '@/libs/patient_information/patientInformation.machine';
+import { createInsuranceMachine } from '@/libs/insurance/insurance.machine';
 import * as patientInformation from '@/libs/patient_information/utils';
-import { union } from 'lodash';
+import * as insurance from '@/libs/insurance/utils';
+import { union, merge } from 'lodash';
 
 export default {
   initialize(context, spawn, bridge) {
@@ -16,13 +18,26 @@ export default {
       },
     });
 
-    return { formState, childRefs: [patientInformationRef] };
+    const insuranceRef = spawn(createInsuranceMachine({ bridge }), {
+      id: 'insurance',
+      input: {
+        formState: formState || {},
+        isEditable: !context.isReadOnly,
+      },
+    });
+
+    return { formState, childRefs: [patientInformationRef, insuranceRef] };
   },
 
   getFormData(formState) {
     let formData = {};
-    formData = patientInformation.serialize({ formState, formData });
 
+    formData = {
+      ...patientInformation.serialize({ formState, formData }),
+      ...insurance.serialize({ formState, formData}),
+    };
+
+    console.log('🚀 ~ getFormData ~ formData:', formData);
     // formData = foo.serialize({ formState, formData, key: 'fields.foo' });
     return formData;
   },
